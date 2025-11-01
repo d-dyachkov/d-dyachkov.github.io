@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Wordle Mini App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
@@ -19,24 +19,27 @@
             --button-hover: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
         }
 
-        /* Тёмная тема (раскомментируй для активации) */
-        /* body.dark { --bg-color: linear-gradient(135deg, #2d3748 0%, #1a202c 100%); --cell-bg: #4a5568; --border-color: #2d3748; --text-color: #f7fafc; } */
+        * {
+            box-sizing: border-box;
+        }
 
         body {
             font-family: 'Roboto', sans-serif;
             text-align: center;
             background: var(--bg-color);
             margin: 0;
-            padding: 20px;
+            padding: 20px 20px 80px 20px; /* Увеличенный bottom для MainButton */
             display: flex;
             flex-direction: column;
             height: 100vh;
-            justify-content: space-between;
+            justify-content: flex-start; /* Контент сверху, с отступом снизу */
             color: var(--text-color);
             transition: all 0.3s ease;
+            overflow-y: auto; /* Скролл, если контент большой */
         }
+
         #header {
-            font-size: 1.8em;
+            font-size: clamp(1.5em, 5vw, 1.8em); /* Адаптивный размер шрифта */
             font-weight: 700;
             margin-bottom: 10px;
             display: flex;
@@ -44,21 +47,23 @@
             justify-content: center;
             gap: 10px;
         }
+
         #gameBoard {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 6px;
+            gap: clamp(4px, 1vw, 6px); /* Адаптивный gap */
             margin: 20px auto;
-            max-width: 320px;
+            max-width: min(90vw, 320px); /* Responsive ширина */
             padding: 10px;
         }
+
         .cell {
-            width: 62px;
-            height: 62px;
+            width: clamp(40px, 12vw, 62px); /* Мин/макс для разных экранов */
+            height: clamp(40px, 12vw, 62px);
             border: 2px solid var(--border-color);
             text-align: center;
-            line-height: 62px;
-            font-size: 2.2em;
+            line-height: clamp(40px, 12vw, 62px);
+            font-size: clamp(1.5em, 6vw, 2.2em);
             font-weight: 700;
             background: var(--cell-bg);
             border-radius: 8px;
@@ -66,65 +71,75 @@
             transition: all 0.3s ease;
             transform: scale(1);
         }
+
         .cell:hover {
             transform: scale(1.05);
         }
+
         .cell.correct {
             background: var(--correct-bg);
             color: white;
             border-color: var(--correct-bg);
             animation: pop 0.3s ease;
         }
+
         .cell.semi-correct {
             background: var(--semi-bg);
             color: white;
             border-color: var(--semi-bg);
             animation: pop 0.3s ease;
         }
+
         .cell.incorrect {
             background: var(--incorrect-bg);
             color: white;
             border-color: var(--incorrect-bg);
             animation: shake 0.3s ease;
         }
+
         @keyframes pop {
             0% { transform: scale(0.8); }
             50% { transform: scale(1.1); }
             100% { transform: scale(1); }
         }
+
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
             25% { transform: translateX(-5px); }
             75% { transform: translateX(5px); }
         }
+
         #inputSection {
             margin: 20px 0;
             display: flex;
             justify-content: center;
             gap: 10px;
-            flex-wrap: wrap;
+            flex-wrap: wrap; /* Wrap на маленьких экранах */
         }
+
         #guessInput {
-            font-size: 1.5em;
+            font-size: clamp(1.2em, 4vw, 1.5em);
             font-family: 'Roboto', sans-serif;
             text-transform: uppercase;
             text-align: center;
             padding: 12px;
-            width: 200px;
-            height: 50px;
+            width: clamp(150px, 50vw, 200px); /* Адаптивная ширина */
+            height: clamp(40px, 10vw, 50px);
             border: 2px solid var(--border-color);
             border-radius: 8px;
             background: var(--cell-bg);
             color: var(--text-color);
             transition: all 0.3s ease;
         }
+
         #guessInput:focus {
             outline: none;
             border-color: var(--button-bg);
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
+
         #guessButton {
-            font-size: 1.2em;
+            font-size: clamp(1em, 3vw, 1.2em);
             font-weight: 700;
             padding: 12px 24px;
             background: var(--button-bg);
@@ -138,17 +153,20 @@
             align-items: center;
             gap: 8px;
         }
+
         #guessButton:hover:not(:disabled) {
             background: var(--button-hover);
             transform: translateY(-2px);
             box-shadow: 0 6px 12px rgba(0,0,0,0.15);
         }
+
         #guessButton:disabled {
             opacity: 0.6;
             cursor: not-allowed;
         }
+
         #message {
-            font-size: 1.2em;
+            font-size: clamp(1em, 3vw, 1.2em);
             margin: 10px 0;
             min-height: 20px;
             opacity: 0;
@@ -158,34 +176,43 @@
             background: rgba(255,255,255,0.8);
             backdrop-filter: blur(10px);
         }
+
         #message.show {
             opacity: 1;
         }
+
         .separator {
             height: 1px;
             background: var(--border-color);
             margin: 20px 0;
             opacity: 0.5;
         }
+
         @media (max-width: 400px) {
+            body {
+                padding: 10px 10px 80px 10px; /* Меньше боковых отступов */
+            }
             #gameBoard {
-                max-width: 280px;
+                max-width: 90vw;
                 gap: 4px;
             }
             .cell {
-                width: 52px;
-                height: 52px;
-                line-height: 52px;
-                font-size: 1.8em;
-            }
-            #guessInput {
-                width: 150px;
-                height: 45px;
-                font-size: 1.3em;
+                width: 18vw; /* Более гибко для очень маленьких экранов */
+                height: 18vw;
+                line-height: 18vw;
+                font-size: 6vw;
             }
             #inputSection {
                 flex-direction: column;
                 align-items: center;
+                gap: 15px;
+            }
+            #guessInput {
+                width: 80vw;
+            }
+            #guessButton {
+                width: 80vw;
+                justify-content: center;
             }
         }
     </style>
@@ -246,7 +273,7 @@
             setTimeout(() => messageEl.classList.remove('show'), 3000);
         }
 
-        // Логика проверки слова (без изменений)
+        // Логика проверки слова
         function checkGuess(guess) {
             const guessArray = guess.split('');
             const solutionArray = solution.split('');
