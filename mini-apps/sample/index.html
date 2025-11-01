@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wordle Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            justify-content: space-between;
+        }
+        #header {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+        #gameBoard {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+            margin: 20px auto;
+            max-width: 300px;
+        }
+        .cell {
+            width: 60px;
+            height: 60px;
+            border: 2px solid #333;
+            text-align: center;
+            line-height: 60px;
+            font-size: 2em;
+            font-weight: bold;
+            background: white;
+        }
+        .cell.correct {
+            background: #6aaa64;
+            color: white;
+            border-color: #6aaa64;
+        }
+        .cell.semi-correct {
+            background: #c9b458;
+            color: white;
+            border-color: #c9b458;
+        }
+        .cell.incorrect {
+            background: #787c7e;
+            color: white;
+            border-color: #787c7e;
+        }
+        #inputSection {
+            margin: 20px 0;
+        }
+        #guessInput {
+            font-size: 1.5em;
+            text-transform: uppercase;
+            text-align: center;
+            margin-right: 10px;
+            width: 200px;
+            height: 50px;
+        }
+        #guessButton {
+            font-size: 1.2em;
+            padding: 10px 20px;
+            background: #0088cc;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #guessButton:hover {
+            background: #006699;
+        }
+        #message {
+            font-size: 1.2em;
+            margin: 10px 0;
+            min-height: 20px;
+        }
+        @media (max-width: 400px) {
+            .cell {
+                width: 50px;
+                height: 50px;
+                line-height: 50px;
+                font-size: 1.5em;
+            }
+            #guessInput {
+                width: 150px;
+                height: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="header">Wordle Mini App</div>
+    <div id="gameBoard"></div>
+    <div id="inputSection">
+        <input type="text" id="guessInput" maxlength="5" placeholder="Введите слово">
+        <button id="guessButton">Угадать</button>
+    </div>
+    <div id="message"></div>
+
+    <script>
+        // Telegram WebApp init
+        if (window.Telegram && window.Telegram.WebApp) {
+            const tg = window.Telegram.WebApp;
+            tg.ready();
+            tg.expand(); // Расширить на весь экран
+            tg.setHeaderColor('#0088cc');
+            tg.setBackgroundColor('#f0f0f0');
+
+            // Показать главную кнопку Telegram (опционально)
+            tg.MainButton.setText('Поделиться результатом');
+            tg.MainButton.onClick(() => {
+                tg.sendData(JSON.stringify({action: 'share', score: currentRow})); // Отправить данные боту
+            });
+            tg.MainButton.show();
+
+            // Приветствие пользователя
+            const user = tg.initDataUnsafe.user;
+            if (user && user.username) {
+                document.getElementById('header').innerText = `Привет, ${user.username}! Wordle`;
+            }
+        }
+
+        // Игра Wordle
+        const solution = 'apple'; // Измените на нужное 5-буквенное слово
+        const maxRows = 6;
+        let currentRow = 0;
+        let currentCol = 0;
+        const gameBoard = document.getElementById('gameBoard');
+        const guessInput = document.getElementById('guessInput');
+        const guessButton = document.getElementById('guessButton');
+        const messageEl = document.getElementById('message');
+
+        // Создать сетку
+        for (let i = 0; i < maxRows * 5; i++) {
+            const cell = document.createElement('div');
+            cell.classList.add('cell');
+            gameBoard.appendChild(cell);
+        }
+        const cells = document.querySelectorAll('.cell');
+
+        // Логика проверки слова
+        function checkGuess(guess) {
+            const guessArray = guess.split('');
+            const solutionArray = solution.split('');
+
+            // Сначала отметим зелёные (правильные позиции)
+            const greenCells = [];
+            for (let i = 0; i < 5; i++) {
+                if (guessArray[i] === solutionArray[i]) {
+                    greenCells.push(i);
+                    cells[currentRow * 5 + i].classList.add('correct');
+                }
+            }
+
+            // Затем жёлтые (буквы есть, но позиция неверная)
+            for (let i = 0; i < 5; i++) {
+                if (!greenCells.includes(i) && solutionArray.includes(guessArray[i])) {
+                    cells[currentRow * 5 + i].classList.add('semi-correct');
+                } else if (!greenCells.includes(i)) {
+                    cells[currentRow * 5 + i].classList.add('incorrect');
+                }
+            }
+
+            // Проверка на победу
+            if (guess === solution) {
+                messageEl.textContent = 'Поздравляем! Вы угадали!';
+                guessButton.disabled = true;
+                guessInput.disabled = true;
+                if (window.Telegram && window.Telegram.WebApp) {
+                    window.Telegram.WebApp.MainButton.setText('Поделиться победой!');
+                }
+                return true;
+            }
+
+            // Проверка на проигрыш
+            if (currentRow === maxRows - 1) {
+                messageEl.textContent = `Игра окончена! Слово было: ${solution.toUpperCase()}`;
+                guessButton.disabled = true;
+                guessInput.disabled = true;
+                return false;
+            }
+
+            return false;
+        }
+
+        // Обработчик кнопки
+        guessButton.addEventListener('click', () => {
+            const guess = guessInput.value.toLowerCase();
+            if (guess.length !== 5) {
+                messageEl.textContent = 'Введите 5-буквенное слово!';
+                return;
+            }
+
+            // Заполнить клетки
+            for (let i = 0; i < 5; i++) {
+                cells[currentRow * 5 + i].textContent = guess[i].toUpperCase();
+            }
+
+            const won = checkGuess(guess);
+            if (!won) {
+                currentRow++;
+                guessInput.value = '';
+                guessInput.focus();
+            }
+        });
+
+        // Обработчик Enter в инпуте
+        guessInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                guessButton.click();
+            }
+        });
+
+        // Автофокус
+        guessInput.focus();
+    </script>
+</body>
+</html>
