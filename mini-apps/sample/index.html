@@ -1,106 +1,202 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wordle Mini App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg-color: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --cell-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --text-color: #1a202c;
+            --correct-bg: #6aaa64;
+            --semi-bg: #c9b458;
+            --incorrect-bg: #787c7e;
+            --button-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --button-hover: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+        }
+
+        /* Тёмная тема (раскомментируй для активации) */
+        /* body.dark { --bg-color: linear-gradient(135deg, #2d3748 0%, #1a202c 100%); --cell-bg: #4a5568; --border-color: #2d3748; --text-color: #f7fafc; } */
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Roboto', sans-serif;
             text-align: center;
-            background-color: #f0f0f0;
+            background: var(--bg-color);
             margin: 0;
             padding: 20px;
             display: flex;
             flex-direction: column;
             height: 100vh;
             justify-content: space-between;
+            color: var(--text-color);
+            transition: all 0.3s ease;
         }
         #header {
-            font-size: 1.5em;
+            font-size: 1.8em;
+            font-weight: 700;
             margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
         #gameBoard {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 5px;
+            gap: 6px;
             margin: 20px auto;
-            max-width: 300px;
+            max-width: 320px;
+            padding: 10px;
         }
         .cell {
-            width: 60px;
-            height: 60px;
-            border: 2px solid #333;
+            width: 62px;
+            height: 62px;
+            border: 2px solid var(--border-color);
             text-align: center;
-            line-height: 60px;
-            font-size: 2em;
-            font-weight: bold;
-            background: white;
+            line-height: 62px;
+            font-size: 2.2em;
+            font-weight: 700;
+            background: var(--cell-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            transform: scale(1);
+        }
+        .cell:hover {
+            transform: scale(1.05);
         }
         .cell.correct {
-            background: #6aaa64;
+            background: var(--correct-bg);
             color: white;
-            border-color: #6aaa64;
+            border-color: var(--correct-bg);
+            animation: pop 0.3s ease;
         }
         .cell.semi-correct {
-            background: #c9b458;
+            background: var(--semi-bg);
             color: white;
-            border-color: #c9b458;
+            border-color: var(--semi-bg);
+            animation: pop 0.3s ease;
         }
         .cell.incorrect {
-            background: #787c7e;
+            background: var(--incorrect-bg);
             color: white;
-            border-color: #787c7e;
+            border-color: var(--incorrect-bg);
+            animation: shake 0.3s ease;
+        }
+        @keyframes pop {
+            0% { transform: scale(0.8); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
         }
         #inputSection {
             margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
         }
         #guessInput {
             font-size: 1.5em;
+            font-family: 'Roboto', sans-serif;
             text-transform: uppercase;
             text-align: center;
-            margin-right: 10px;
+            padding: 12px;
             width: 200px;
             height: 50px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--cell-bg);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+        #guessInput:focus {
+            outline: none;
+            border-color: var(--button-bg);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
         #guessButton {
             font-size: 1.2em;
-            padding: 10px 20px;
-            background: #0088cc;
+            font-weight: 700;
+            padding: 12px 24px;
+            background: var(--button-bg);
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        #guessButton:hover {
-            background: #006699;
+        #guessButton:hover:not(:disabled) {
+            background: var(--button-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        #guessButton:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
         #message {
             font-size: 1.2em;
             margin: 10px 0;
             min-height: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(10px);
+        }
+        #message.show {
+            opacity: 1;
+        }
+        .separator {
+            height: 1px;
+            background: var(--border-color);
+            margin: 20px 0;
+            opacity: 0.5;
         }
         @media (max-width: 400px) {
+            #gameBoard {
+                max-width: 280px;
+                gap: 4px;
+            }
             .cell {
-                width: 50px;
-                height: 50px;
-                line-height: 50px;
-                font-size: 1.5em;
+                width: 52px;
+                height: 52px;
+                line-height: 52px;
+                font-size: 1.8em;
             }
             #guessInput {
                 width: 150px;
-                height: 40px;
+                height: 45px;
+                font-size: 1.3em;
+            }
+            #inputSection {
+                flex-direction: column;
+                align-items: center;
             }
         }
     </style>
 </head>
 <body>
-    <div id="header">Wordle Mini App</div>
+    <div id="header">🧩 Wordle Mini App</div>
+    <div class="separator"></div>
     <div id="gameBoard"></div>
     <div id="inputSection">
         <input type="text" id="guessInput" maxlength="5" placeholder="Введите слово">
-        <button id="guessButton">Угадать</button>
+        <button id="guessButton">Угадать ➤</button>
     </div>
     <div id="message"></div>
 
@@ -109,26 +205,24 @@
         if (window.Telegram && window.Telegram.WebApp) {
             const tg = window.Telegram.WebApp;
             tg.ready();
-            tg.expand(); // Расширить на весь экран
-            tg.setHeaderColor('#0088cc');
-            tg.setBackgroundColor('#f0f0f0');
+            tg.expand();
+            tg.setHeaderColor('#667eea');
+            tg.setBackgroundColor('#f5f7fa');
 
-            // Показать главную кнопку Telegram (опционально)
             tg.MainButton.setText('Поделиться результатом');
             tg.MainButton.onClick(() => {
-                tg.sendData(JSON.stringify({action: 'share', score: currentRow})); // Отправить данные боту
+                tg.sendData(JSON.stringify({action: 'share', score: currentRow + 1}));
             });
             tg.MainButton.show();
 
-            // Приветствие пользователя
             const user = tg.initDataUnsafe.user;
             if (user && user.username) {
-                document.getElementById('header').innerText = `Привет, ${user.username}! Wordle`;
+                document.getElementById('header').innerHTML = `🧩 Привет, ${user.username}! Wordle`;
             }
         }
 
-        // Игра Wordle
-        const solution = 'apple'; // Измените на нужное 5-буквенное слово
+        // Игра Wordle (логика без изменений)
+        const solution = 'apple'; // Измените на нужное слово
         const maxRows = 6;
         let currentRow = 0;
         let currentCol = 0;
@@ -145,12 +239,18 @@
         }
         const cells = document.querySelectorAll('.cell');
 
-        // Логика проверки слова
+        // Показать сообщение с анимацией
+        function showMessage(text) {
+            messageEl.textContent = text;
+            messageEl.classList.add('show');
+            setTimeout(() => messageEl.classList.remove('show'), 3000);
+        }
+
+        // Логика проверки слова (без изменений)
         function checkGuess(guess) {
             const guessArray = guess.split('');
             const solutionArray = solution.split('');
 
-            // Сначала отметим зелёные (правильные позиции)
             const greenCells = [];
             for (let i = 0; i < 5; i++) {
                 if (guessArray[i] === solutionArray[i]) {
@@ -159,7 +259,6 @@
                 }
             }
 
-            // Затем жёлтые (буквы есть, но позиция неверная)
             for (let i = 0; i < 5; i++) {
                 if (!greenCells.includes(i) && solutionArray.includes(guessArray[i])) {
                     cells[currentRow * 5 + i].classList.add('semi-correct');
@@ -168,9 +267,8 @@
                 }
             }
 
-            // Проверка на победу
             if (guess === solution) {
-                messageEl.textContent = 'Поздравляем! Вы угадали!';
+                showMessage('Поздравляем! Вы угадали! 🎉');
                 guessButton.disabled = true;
                 guessInput.disabled = true;
                 if (window.Telegram && window.Telegram.WebApp) {
@@ -179,9 +277,8 @@
                 return true;
             }
 
-            // Проверка на проигрыш
             if (currentRow === maxRows - 1) {
-                messageEl.textContent = `Игра окончена! Слово было: ${solution.toUpperCase()}`;
+                showMessage(`Игра окончена! Слово было: ${solution.toUpperCase()} 😔`);
                 guessButton.disabled = true;
                 guessInput.disabled = true;
                 return false;
@@ -194,11 +291,10 @@
         guessButton.addEventListener('click', () => {
             const guess = guessInput.value.toLowerCase();
             if (guess.length !== 5) {
-                messageEl.textContent = 'Введите 5-буквенное слово!';
+                showMessage('Введите 5-буквенное слово!');
                 return;
             }
 
-            // Заполнить клетки
             for (let i = 0; i < 5; i++) {
                 cells[currentRow * 5 + i].textContent = guess[i].toUpperCase();
             }
@@ -208,10 +304,11 @@
                 currentRow++;
                 guessInput.value = '';
                 guessInput.focus();
+                showMessage(`Попытка ${currentRow + 1}/6`);
             }
         });
 
-        // Обработчик Enter в инпуте
+        // Обработчик Enter
         guessInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 guessButton.click();
